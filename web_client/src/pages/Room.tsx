@@ -100,7 +100,7 @@ export function Room() {
           <div className="border-b border-white/10 pb-12">
             <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
               <div className="col-span-full">
-                <label className="block text-sm/6 font-medium text-white">Upload files</label>
+                <label className="block text-sm/6 font-medium">Upload files</label>
                 <div className="mt-2 flex justify-center rounded-lg border border-dashed border-white/25 px-6 py-10">
                   <div className="text-center">
                     <div className="mt-4 flex text-sm/6 text-gray-400">
@@ -119,7 +119,7 @@ export function Room() {
 
         <div className="mt-6 flex items-center justify-end gap-x-6">
           <button type="button" onClick={() => navigate("/")}className="text-sm/6 font-semibold text-white">Leave Room</button>
-          <button type="submit" className="rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">Share</button>
+          <button type="submit" className="buttonStyle">Share</button>
         </div>
       </form>
     </section>
