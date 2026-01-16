@@ -53,7 +53,7 @@ function createPeerConnection(from: ClientId, target: ClientId): PeerEntry {
 export async function makeOffer(from: ClientId, target: ClientId) {
   const peer = createPeerConnection(from, target);
   if (peer.pc.connectionState === "connected") return;
-  peer.dc = peer.pc.createDataChannel("file-channel", {ordered: true});
+  peer.dc = peer.pc.createDataChannel("file-channel", {ordered: true, maxRetransmits: 0});
   const offer = await peer.pc.createOffer();
   await peer.pc.setLocalDescription(offer);
   return offer;
@@ -99,7 +99,7 @@ export function sendFile(from: ClientId, target: ClientId, file: File) {
   const peer = createPeerConnection(from, target);
   if(peer.dc!.readyState === "closed") {
     console.log("create new file channel");
-    peer.dc = peer.pc.createDataChannel("file-channel");
+    peer.dc = peer.pc.createDataChannel("file-channel", {ordered: true, maxRetransmits: 0});
   }
   setupSenderChannel(peer.dc!, file);
 }
