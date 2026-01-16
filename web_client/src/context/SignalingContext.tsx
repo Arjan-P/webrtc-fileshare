@@ -16,9 +16,13 @@ export function SignalingProvider({ children }: { children: ReactNode }) {
   const [clientId, setClientId] = useState<ClientId>("");
   const [webSocketOpen, setWebSocketOpen] = useState<boolean>(false);
 
+  useEffect(() => {
+    
   fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/id`)
     .then(res => res.json())
     .then(data => setClientId(data));
+  }, []);
+
   useEffect(() => {
 
     let disposed = false;
@@ -38,8 +42,11 @@ export function SignalingProvider({ children }: { children: ReactNode }) {
         setWebSocketOpen(false);
         console.log("Disconnected");
 
-        if (!disposed) {
-          reconnectTimer = window.setTimeout(connect, 2000);
+        if (!disposed && !reconnectTimer) {
+          reconnectTimer = window.setTimeout(() => {
+            reconnectTimer = null;
+            connect();
+          }, 2000);
         }
       });
 
