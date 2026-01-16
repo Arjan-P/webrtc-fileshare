@@ -16,11 +16,11 @@ export function SignalingProvider({ children }: { children: ReactNode }) {
   const [clientId, setClientId] = useState<ClientId>("");
   const [webSocketOpen, setWebSocketOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-
   fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/id`)
     .then(res => res.json())
     .then(data => setClientId(data));
+  useEffect(() => {
+
     let disposed = false;
     let reconnectTimer: number | null = null;
 
