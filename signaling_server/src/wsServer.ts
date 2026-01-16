@@ -12,6 +12,7 @@ export function createWSServer(server: HttpServer) {
 
     ws.on("message", raw => {
       const msg = JSON.parse(raw.toString()) as SignalMsg;
+      console.log(msg);
 
       switch (msg.type) {
         case "join":
