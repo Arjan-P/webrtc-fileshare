@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { sendMessage, onMessage, initSignaling } from "../util/signaling";
 import type { ClientId } from "../util/signaling"
-import { createSocket } from "../util/socket";
+import { createSocket, getSocket } from "../util/socket";
 
 interface SignalingContextType {
   id: ClientId;
@@ -16,34 +16,31 @@ export function SignalingProvider({ children }: { children: ReactNode }) {
   const [clientId, setClientId] = useState<ClientId>("");
   const [webSocketOpen, setWebSocketOpen] = useState<boolean>(false);
 
-  const socketRef = useRef<WebSocket | null>(null);
-  const reconnectTimerRef = useRef<number | null>(null);
-  const reconnectAttempts = useRef(0);
+  useEffect(() => {
 
   fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/id`)
     .then(res => res.json())
     .then(data => setClientId(data));
-  useEffect(() => {
     let disposed = false;
+    let reconnectTimer: number | null = null;
 
     function connect() {
       if (disposed) return;
 
       const socket = createSocket();
-      socketRef.current = socket;
 
       socket.addEventListener("open", () => {
-        reconnectAttempts.current = 0;
         setWebSocketOpen(true);
-        console.log("WebSocket connected");
+        console.log("Connected");
       });
 
       socket.addEventListener("close", () => {
         setWebSocketOpen(false);
-        socketRef.current = null;
-        console.log("WebSocket disconnected");
+        console.log("Disconnected");
 
-        scheduleReconnect();
+        if (!disposed) {
+          reconnectTimer = window.setTimeout(connect, 2000);
+        }
       });
 
       socket.addEventListener("error", () => {
@@ -53,32 +50,19 @@ export function SignalingProvider({ children }: { children: ReactNode }) {
       initSignaling();
     }
 
-    function scheduleReconnect() {
-      if (disposed) return;
-      if (reconnectTimerRef.current) return;
-      console.log("scheduling reconnect");
-
-      const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 10_000);
-      reconnectAttempts.current++;
-
-      reconnectTimerRef.current = window.setTimeout(() => {
-        reconnectTimerRef.current = null;
-        connect();
-      }, delay);
-    }
-
     connect();
 
     return () => {
       disposed = true;
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current);
-      }
-      socketRef.current?.close();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      try {
+        getSocket().close();
+      } catch { }
     };
   }, []);
+
   return (
-    <SignalingContext.Provider value={{ id: clientId,webSocketOpen, sendMessage, onMessage }}>
+    <SignalingContext.Provider value={{ id: clientId, webSocketOpen, sendMessage, onMessage }}>
       {children}
     </SignalingContext.Provider>
   )

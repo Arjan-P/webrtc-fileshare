@@ -11,7 +11,7 @@ export type SignalMsg =
   |
   {
     type: "leave";
-    roomId: ClientId;
+    roomId: RoomId;
     clientId: ClientId;
   }
   |
@@ -53,6 +53,7 @@ export type SignalMsg =
 
 type Handler = (msg: SignalMsg) => void;
 const handlers = new Set<Handler>();
+let wiredSocket: WebSocket | null = null;
 
 export function createSocket() {
   const socket = getSocket();
@@ -70,6 +71,8 @@ export function sendMessage(msg: SignalMsg) {
 
 export function initSignaling() {
   const socket = getSocket();
+  if(wiredSocket === socket) return;
+  wiredSocket = socket;
   socket.addEventListener("message", (event) => {
     try {
       const msg = JSON.parse(event.data);
