@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { ClientId } from "../util/signaling";
 import { useSignaling } from "../context/SignalingContext";
 import { handleAnswer, handleIce, handleOffer, makeOffer, sendFile } from "../util/webrtc";
+import { RoomQR } from "../components/RoomQR";
 
 export function Room() {
   const { roomId } = useParams();
@@ -89,11 +90,19 @@ export function Room() {
     <section className="p-8">
       <h1>Client ID: {id}</h1>
       <h2> Room: {roomId}</h2>
-      <ul>
-        {peers.map(peer => (
-          <li key={peer}>{peer}</li>
-        ))}
-      </ul>
+      <div className="grid grid-cols-2 divide-x divide-white/10">
+        <div className="pr-4">
+          <h3>Peers:</h3>
+          <ul>
+            {peers.map(peer => (
+              <li key={peer}>{peer}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="pl-4 flex justify-center">
+          <RoomQR roomId={roomId!} />
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="space-y-12">
@@ -118,7 +127,7 @@ export function Room() {
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-x-6">
-          <button type="button" onClick={() => navigate("/")}className="text-sm/6 font-semibold text-white">Leave Room</button>
+          <button type="button" onClick={() => navigate("/")} className="text-sm/6 font-semibold text-white">Leave Room</button>
           <button type="submit" className="buttonStyle">Share</button>
         </div>
       </form>
