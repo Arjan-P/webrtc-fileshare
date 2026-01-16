@@ -1,6 +1,5 @@
 import { useState } from "react"
 import type { RoomId } from "../util/signaling"
-import { useSignaling } from "../context/SignalingContext";
 import { useNavigate } from "react-router-dom";
 
 export function JoinRoom() {
