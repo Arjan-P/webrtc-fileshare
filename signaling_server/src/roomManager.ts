@@ -23,7 +23,7 @@ export function joinRoom(
   ws: WebSocket
 ) {
   const room = rooms.get(roomId);
-  if(!room) return;
+  if (!room) return;
   for (const peer of room.values()) {
     peer.ws.send(JSON.stringify({
       type: "peer-join",
@@ -39,18 +39,25 @@ export function joinRoom(
 
 export function leaveRoom(roomId: RoomId, clientId: ClientId) {
   const room = rooms.get(roomId);
-  if(!room) return;
+  if (!room) return;
+  if (!room.has(clientId)) return;
   room.delete(clientId);
-  for(const peer of room.values()) {
-    peer.ws.send(JSON.stringify({
-      type: "peer-left",
-      clientId 
-    }));
+  for (const peer of room.values()) {
+    if (peer.ws.readyState === WebSocket.OPEN) {
+
+      peer.ws.send(JSON.stringify({
+        type: "peer-left",
+        clientId
+      }));
+    }
+  }
+  if (room.size === 0) {
+    rooms.delete(roomId);
   }
 }
 
 export function leaveAllRooms(clientId: ClientId) {
-  for (const roomId of rooms.keys()) {
+  for (const roomId of [...rooms.keys()]) {
     leaveRoom(roomId, clientId);
   }
 }
@@ -61,7 +68,7 @@ export function forwardToPeer(
   message: any
 ) {
   const room = rooms.get(roomId);
-  if(!room) return;
+  if (!room) return;
   const peer = room.get(targetId);
   if (peer) {
     peer.ws.send(JSON.stringify(message));
