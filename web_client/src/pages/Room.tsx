@@ -6,7 +6,7 @@ import { handleAnswer, handleIce, handleOffer, makeOffer, sendFile } from "../ut
 
 export function Room() {
   const { roomId } = useParams();
-  const { id, sendMessage, onMessage } = useSignaling();
+  const { id, webSocketOpen, sendMessage, onMessage } = useSignaling();
   const [peers, setPeers] = useState<ClientId[]>([]);
   const [file, setFile] = useState<File | null>(null);
 
@@ -33,7 +33,7 @@ export function Room() {
   }
 
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !webSocketOpen) return;
     const leaveRoom = () => {
       sendMessage({
         type: "leave",
@@ -82,7 +82,7 @@ export function Room() {
       leaveRoom();
       unsubscribe();
     }
-  }, []);
+  }, [roomId, webSocketOpen]);
 
   return (
     <div>
