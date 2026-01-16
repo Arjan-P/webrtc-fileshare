@@ -87,6 +87,7 @@ export function Room() {
 
   return (
     <section className="p-8">
+      <h1>Client ID: {id}</h1>
       <h2> Room: {roomId}</h2>
       <ul>
         {peers.map(peer => (
