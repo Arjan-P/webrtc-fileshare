@@ -61,7 +61,7 @@ export function createSocket() {
 
 export function sendMessage(msg: SignalMsg) {
   const socket = getSocket();
-  if (socket.readyState === WebSocket.OPEN) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(msg));
   } else {
     console.error("Connection not open yet");

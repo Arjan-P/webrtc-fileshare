@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
 import { sendMessage, onMessage, initSignaling } from "../util/signaling";
-import type { ClientId, SignalMsg } from "../util/signaling"
+import type { ClientId } from "../util/signaling"
 import { createSocket } from "../util/socket";
 
 interface SignalingContextType {
@@ -15,30 +15,67 @@ const SignalingContext = createContext<SignalingContextType | null>(null);
 export function SignalingProvider({ children }: { children: ReactNode }) {
   const [clientId, setClientId] = useState<ClientId>("");
   const [webSocketOpen, setWebSocketOpen] = useState<boolean>(false);
+
+  const socketRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
+  const reconnectAttempts = useRef(0);
+
+  fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/id`)
+    .then(res => res.json())
+    .then(data => setClientId(data));
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/id`)
-      .then(res => res.json())
-      .then(data => setClientId(data));
+    let disposed = false;
 
-    const socket = createSocket();
-    
-    socket.addEventListener("open", () => {
-      setWebSocketOpen(true);
-      console.log("Connected to server");
-    });
+    function connect() {
+      if (disposed) return;
 
-    socket.addEventListener("close", () => {
-      setWebSocketOpen(false);
-      console.log("Disconnected from server");
-    });
+      const socket = createSocket();
+      socketRef.current = socket;
 
-    initSignaling();
+      socket.addEventListener("open", () => {
+        reconnectAttempts.current = 0;
+        setWebSocketOpen(true);
+        console.log("WebSocket connected");
+      });
 
-    const unsubscribe = onMessage((msg: SignalMsg) => {
-      console.log(msg);
-    });
+      socket.addEventListener("close", () => {
+        setWebSocketOpen(false);
+        socketRef.current = null;
+        console.log("WebSocket disconnected");
 
-    return () => { socket.close(); unsubscribe() };
+        scheduleReconnect();
+      });
+
+      socket.addEventListener("error", () => {
+        socket.close();
+      });
+
+      initSignaling();
+    }
+
+    function scheduleReconnect() {
+      if (disposed) return;
+      if (reconnectTimerRef.current) return;
+      console.log("scheduling reconnect");
+
+      const delay = Math.min(1000 * 2 ** reconnectAttempts.current, 10_000);
+      reconnectAttempts.current++;
+
+      reconnectTimerRef.current = window.setTimeout(() => {
+        reconnectTimerRef.current = null;
+        connect();
+      }, delay);
+    }
+
+    connect();
+
+    return () => {
+      disposed = true;
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
+      socketRef.current?.close();
+    };
   }, []);
   return (
     <SignalingContext.Provider value={{ id: clientId,webSocketOpen, sendMessage, onMessage }}>
