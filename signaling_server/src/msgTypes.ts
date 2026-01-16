@@ -1,13 +1,55 @@
 export type ClientId = string;
-export type SignalMsg = 
-  {type: "offer"; from: ClientId; to: ClientId; offer: RTCSessionDescription}
+export type RoomId = string;
+export type SignalMsg =
+  {
+    type: "new-connection";
+    clientId: ClientId;
+  }
   |
-  {type: "answer"; from: ClientId; to: ClientId; answer: RTCSessionDescription}
+  {
+      type: "join";
+      roomId: RoomId;
+      clientId: ClientId;
+  }
   |
-  {type: "new-ice-candidates"; from: ClientId; to: ClientId; ice: RTCIceCandidate}
+  {
+    type: "leave";
+    roomId: RoomId;
+    clientId: ClientId;
+  }
   |
-  {type: "new-connection"; id: ClientId; peers: ClientId[]}
+  {
+      type: "offer";
+      from: ClientId
+      target: ClientId;
+      sdp: RTCSessionDescriptionInit;
+  }
   |
-  {type: "peer-join"; id: ClientId}
+  {
+      type: "answer";
+      from: ClientId;
+      target: ClientId;
+      sdp: RTCSessionDescriptionInit;
+  }
   |
-  {type: "peer-left"; id: ClientId}
+  {
+      type: "ice";
+      from: ClientId;
+      target: ClientId;
+      candidate: RTCIceCandidateInit;
+  }
+  |
+  {
+    type: "peer-join";
+    clientId: ClientId;
+  }
+  |
+  {
+    type: "room-peers";
+    peers: ClientId[];
+  }
+  |
+  {
+    type: "peer-left";
+    clientId: ClientId;
+  };

@@ -23,10 +23,10 @@ function createPeerConnection(from: ClientId, target: ClientId): PeerEntry {
   pc.addEventListener("icecandidate", (event) =>{
     if(event.candidate) {
       const msg: SignalMsg = {
-        type: "new-ice-candidates",
+        type: "ice",
         from,
-        to: target,
-        ice: event.candidate,
+        target,
+        candidate: event.candidate,
       };
       sendMessage(msg);
     }

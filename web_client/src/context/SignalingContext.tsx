@@ -14,6 +14,9 @@ const SignalingContext = createContext<SignalingContextType | null>(null);
 export function SignalingProvider({ children }: { children: ReactNode }) {
   const [clientId, setClientId] = useState<ClientId>("");
   useEffect(() => {
+    fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/id`)
+      .then(res => res.json())
+      .then(data => setClientId(data));
 
     const socket = createSocket();
     socket.addEventListener("open", () => {
@@ -28,10 +31,7 @@ export function SignalingProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onMessage((msg: SignalMsg) => {
       console.log(msg);
-      if (msg.type == "new-connection") {
-        setClientId(msg.id);
-      };
-    })
+    });
 
     return () => { socket.close(); unsubscribe() };
   }, []);

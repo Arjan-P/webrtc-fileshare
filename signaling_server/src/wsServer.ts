@@ -1,45 +1,41 @@
+import type {Server as HttpServer} from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import type { ClientId, SignalMsg } from "./msgTypes.js";
-import { nanoid } from "nanoid";
+import { joinRoom, leaveRoom, leaveAllRooms, forwardToPeer } from "./roomManager.js";
+import type { SignalMsg } from "./msgTypes.js"
 
-const room = new Map<ClientId, WebSocket>();
+export function createWSServer(server: HttpServer) {
+  const wss = new WebSocketServer({server});
 
-export function createWSServer(port: number): WebSocketServer {
-  const wss = new WebSocketServer({ port });
-  wss.on('connection', (ws: WebSocket) => {  // fired when client successfully upgrades from http to ws
-    // assign id
-    const id = nanoid();
-    ws.send(JSON.stringify({type:"new-connection", id, peers: [...room.keys()]}));
-    room.set(id, ws);
-    room.forEach(peer => {
-      if(peer !== ws) peer.send(JSON.stringify({type:"peer-join", id}));
-    })
-    console.log(`${id} joined room`);
-    console.log([...room.keys()]);
-    ws.on('error', console.error);
-    ws.on('message', (data: WebSocket.RawData) => {
-      const msgStr = data.toString();
-      const msg: SignalMsg = JSON.parse(msgStr);
-      console.log(`${id}|msg|-> ${msgStr}`);
-      switch(msg.type) {
-        case "answer":
+  wss.on("connection", (ws: WebSocket) => {
+    let currentRoom: string | null = null;
+    let clientId: string | null;
+
+    ws.on("message", raw => {
+      const msg = JSON.parse(raw.toString()) as SignalMsg;
+
+      switch (msg.type) {
+        case "join":
+          currentRoom = msg.roomId;
+          clientId = msg.clientId;
+          joinRoom(msg.roomId, msg.clientId, ws);
+          break;
+        case "leave":
+          if(clientId) leaveRoom(msg.roomId, clientId);
+          break;
         case "offer":
-        case "new-ice-candidates":
-          const peer = room.get(msg.to)
-          if(peer?.readyState === WebSocket.OPEN) peer?.send(msgStr);
+        case "answer":
+        case "ice":
+          if (!currentRoom) return;
+          forwardToPeer(currentRoom, msg.target, msg);
           break;
       }
     });
-    ws.on('close', () => {
-      console.log(`${id} left room`);
-      room.delete(id);
-      room.forEach(peer => {
-        peer.send(JSON.stringify({
-          type: "peer-left",
-          id
-        }));
-      })
+
+    ws.on("close", () => {
+      if (clientId) leaveAllRooms(clientId);
     });
-  })
+  });
+
   return wss;
 }
+

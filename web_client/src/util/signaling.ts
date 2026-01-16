@@ -1,18 +1,55 @@
 import { getSocket } from "./socket";
 
 export type ClientId = string;
+export type RoomId = string;
 export type SignalMsg =
-  { type: "offer"; from: ClientId; to: ClientId; offer: RTCSessionDescriptionInit }
+  {
+      type: "join";
+      roomId: RoomId;
+      clientId: ClientId;
+  }
   |
-  { type: "answer"; from: ClientId; to: ClientId; answer: RTCSessionDescriptionInit }
+  {
+    type: "leave";
+    roomId: ClientId;
+    clientId: ClientId;
+  }
   |
-  { type: "new-ice-candidates"; from: ClientId; to: ClientId; ice: RTCIceCandidateInit }
+  {
+      type: "offer";
+      from: ClientId;
+      target: ClientId;
+      sdp: RTCSessionDescriptionInit;
+  }
   |
-  { type: "new-connection"; id: ClientId; peers: ClientId[] }
+  {
+      type: "answer";
+      from: ClientId;
+      target: ClientId;
+      sdp: RTCSessionDescriptionInit;
+  }
   |
-  { type: "peer-join"; id: ClientId }
+  {
+      type: "ice";
+      from: ClientId;
+      target: ClientId;
+      candidate: RTCIceCandidateInit;
+  }
   |
-  { type: "peer-left"; id: ClientId }
+  {
+    type: "peer-join";
+    clientId: ClientId;
+  }
+  |
+  {
+    type: "room-peers";
+    peers: ClientId[];
+  }
+  |
+  {
+    type: "peer-left";
+    clientId: ClientId;
+  };
 
 type Handler = (msg: SignalMsg) => void;
 const handlers = new Set<Handler>();
