@@ -90,8 +90,10 @@ export function Room() {
     <section className="p-8">
       <h1>Client ID: {id}</h1>
       <h2> Room: {roomId}</h2>
-      <div className="grid grid-cols-2 divide-x divide-white/10">
-        <div className="pr-4">
+      <div className="grid grid-cols-1 md:grid-cols-2
+                divide-y divide-white/10
+                md:divide-y-0 md:divide-x">
+        <div className="py-4 md:pr-4">
           <h3>Peers:</h3>
           <ul>
             {peers.map(peer => (
@@ -99,11 +101,11 @@ export function Room() {
             ))}
           </ul>
         </div>
-        <div className="pl-4 flex justify-center">
+
+        <div className="py-4 md:pl-4 flex justify-center">
           <RoomQR roomId={roomId!} />
         </div>
       </div>
-
       <form onSubmit={handleSubmit}>
         <div className="space-y-12">
           <div className="border-b border-white/10 pb-12">
