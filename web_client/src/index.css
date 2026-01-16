@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+@layer base {
+  h1 {
+    @apply text-2xl text-white font-bold;
+  }
+
+  h2 {
+    @apply text-xl text-white font-semibold;
+  }
+
+  h3 {
+    @apply text-lg text-white font-semibold;
+  }
+}

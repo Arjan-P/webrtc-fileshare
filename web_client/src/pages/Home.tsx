@@ -1,11 +1,15 @@
-import { CreateRoom } from "../components/CreateRoom"
-import { JoinRoom } from "../components/JoinRoom"
+import { RoomForm } from "../components/RoomForm"
+
 export function Home() {
+
   return (
-    <div>
+    <section className="p-8">
       <h1> Home </h1>
-      <CreateRoom />
-      <JoinRoom />
+      <div className="h-full w-full flex justify-around items-center">
+      <div className="bg-gray-400 p-6 rounded-lg">
+        <RoomForm />
+      </div>
     </div>
+    </section>
   )
 }
