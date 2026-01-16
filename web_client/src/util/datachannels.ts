@@ -1,4 +1,4 @@
-const CHUNK_SIZE = 64 * 1024; // 64KB
+const CHUNK_SIZE = 16 * 1024; // 16KB
 const MAX_BUFFERED = 8 * 1024 * 1024; // 8MB
 
 export function setupReceiverDatachannel(dc: RTCDataChannel) {
