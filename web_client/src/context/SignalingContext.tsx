@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { sendMessage, onMessage, initSignaling } from "../util/signaling";
 import type { ClientId, SignalMsg } from "../util/signaling"
 import { createSocket } from "../util/socket";
+import { useNavigate } from "react-router-dom";
 
 interface SignalingContextType {
   id: ClientId;
@@ -13,6 +14,7 @@ const SignalingContext = createContext<SignalingContextType | null>(null);
 
 export function SignalingProvider({ children }: { children: ReactNode }) {
   const [clientId, setClientId] = useState<ClientId>("");
+  const navigate = useNavigate();
   useEffect(() => {
     fetch(`${import.meta.env.VITE_HTTP_SERVER_URL}/id`)
       .then(res => res.json())
@@ -24,6 +26,7 @@ export function SignalingProvider({ children }: { children: ReactNode }) {
     });
 
     socket.addEventListener("close", () => {
+      navigate("/");
       console.log("Disconnected from server");
     });
 
