@@ -3,7 +3,7 @@ const MAX_BUFFERED = 8 * 1024 * 1024; // 8MB
 
 export function setupReceiverDatachannel(dc: RTCDataChannel) {
   dc.binaryType = "arraybuffer";
-  let fileInfo: { name: string; size: number; mime: string } | null = null;
+  let fileInfo: { name: string; size: number; mime: string; id: string } | null = null;
   let receivedBytes = 0;
   const chunks: ArrayBuffer[] = [];
   dc.onmessage = (event) => {
@@ -16,12 +16,13 @@ export function setupReceiverDatachannel(dc: RTCDataChannel) {
           receivedBytes = 0;
           chunks.length = 0;
           console.log("Receiving file:", msg.name);
+          if(fileInfo) createProgressUI(fileInfo.id, fileInfo?.name);
           break;
 
         case "done":
           if (!fileInfo) return;
-
           const blob = new Blob(chunks, { type: fileInfo.mime });
+          chunks.length = 0;
           downloadBlob(blob, fileInfo.name);
           console.log("File received:", fileInfo.name);
           break;
@@ -32,8 +33,10 @@ export function setupReceiverDatachannel(dc: RTCDataChannel) {
     chunks.push(chunk);
     receivedBytes += chunk.byteLength;
 
+
     if (fileInfo) {
       const progress = (receivedBytes / fileInfo.size) * 100;
+      updateReceiveBar(fileInfo.id, progress);
       console.log(`Progress: ${progress.toFixed(1)}%`);
     }
   }
@@ -54,15 +57,18 @@ export function setupSenderChannel(
   dc.binaryType = "arraybuffer";
 
   dc.addEventListener("open", async () => {
+    const id: string = crypto.randomUUID();
     dc.send(JSON.stringify({
       type: "meta",
       name: file.name,
       size: file.size,
       mime: file.type,
+      id
     }));
+    createProgressUI(id, file.name);
 
     let offset = 0;
-
+    let progress = 0;
     try {
       while (offset < file.size) {
         if (dc.readyState !== "open") {
@@ -79,6 +85,8 @@ export function setupSenderChannel(
 
         dc.send(chunk);
         offset += chunk.byteLength;
+        progress = (offset / file.size) * 100;
+        updateReceiveBar(id, progress);
       }
 
       dc.send(JSON.stringify({ type: "done" }));
@@ -99,6 +107,7 @@ export function setupSenderChannel(
 }
 
 function waitForLowBuffer(dc: RTCDataChannel) {
+  dc.bufferedAmountLowThreshold = MAX_BUFFERED / 2;
   return new Promise<void>((resolve) => {
     const check = () => {
       if (dc.bufferedAmount < MAX_BUFFERED / 2) {
@@ -119,3 +128,22 @@ function downloadBlob(blob: Blob, filename: string) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+function createProgressUI(id: string, name: string) {
+  const div = document.createElement("div");
+  div.id = id;
+  div.innerHTML = `
+    <span>${name}</span>
+    <progress max="100" value="0"></progress>
+    <span class="percent">0%</span>
+  `;
+  document.getElementById("files")!.appendChild(div);
+}
+
+function updateReceiveBar(id: string, progress: number) {
+  const el = document.getElementById(id)!;
+  el.querySelector("progress")!.value = progress;
+  el.querySelector(".percent")!.textContent =
+    `${Math.floor(progress)}%`;
+}
+

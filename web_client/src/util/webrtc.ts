@@ -4,7 +4,6 @@ import type { ClientId, SignalMsg } from "./signaling";
 
 interface PeerEntry {
   pc: RTCPeerConnection;
-  dc?: RTCDataChannel;
   iceCandidateBuffer: RTCIceCandidateInit[];
 }
 
@@ -53,7 +52,7 @@ function createPeerConnection(from: ClientId, target: ClientId): PeerEntry {
 export async function makeOffer(from: ClientId, target: ClientId) {
   const peer = createPeerConnection(from, target);
   if (peer.pc.connectionState === "connected") return;
-  peer.dc = peer.pc.createDataChannel("file-channel", {ordered: true});
+  peer.pc.createDataChannel("temp-channel", {ordered: true});
   const offer = await peer.pc.createOffer();
   await peer.pc.setLocalDescription(offer);
   return offer;
@@ -95,13 +94,13 @@ async function flushIce(pc: RTCPeerConnection, iceBuffer: RTCIceCandidateInit[])
   iceBuffer.length = 0;
 }
 
-export function sendFile(from: ClientId, target: ClientId, file: File) {
+export function sendFiles(from: ClientId, target: ClientId, files: File[]) {
   const peer = createPeerConnection(from, target);
-  if(peer.dc!.readyState === "closed") {
-    console.log("create new file channel");
-    peer.dc = peer.pc.createDataChannel("file-channel");
-  }
-  setupSenderChannel(peer.dc!, file);
+  files.forEach(file => {
+    console.log("created file channel for", file.name);
+    const dc = peer.pc.createDataChannel("file-channel");
+    setupSenderChannel(dc, file);
+  })
 }
 
 function removePeer(target: ClientId) {

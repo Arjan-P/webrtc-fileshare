@@ -2,19 +2,29 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { ClientId } from "../util/signaling";
 import { useSignaling } from "../context/SignalingContext";
-import { handleAnswer, handleIce, handleOffer, makeOffer, sendFile } from "../util/webrtc";
+import { handleAnswer, handleIce, handleOffer, makeOffer, sendFiles } from "../util/webrtc";
 import { RoomQR } from "../components/RoomQR";
 
 export function Room() {
   const { roomId } = useParams();
   const { id, webSocketOpen, sendMessage, onMessage } = useSignaling();
   const [peers, setPeers] = useState<ClientId[]>([]);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[] | null>(null);
   const navigate = useNavigate();
 
+  function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const fileList = e.target.files;
+    if (!fileList) return;
+
+    const f = Array.from(fileList); // IMPORTANT
+    setFiles(f);
+    console.log(f);
+  }
+
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
+    if (!files) {
       console.log("No file provided");
       return;
     }
@@ -30,7 +40,7 @@ export function Room() {
           sdp: offer
         });
       }
-      sendFile(id, peer, file);
+      sendFiles(id, peer, files);
     }
   }
 
@@ -117,7 +127,7 @@ export function Room() {
                     <div className="mt-4 flex text-sm/6 text-gray-400">
                       <label className="relative cursor-pointer rounded-md bg-transparent font-semibold text-indigo-400 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-indigo-500 hover:text-indigo-300">
                         <span>Upload a file</span>
-                        <input type="file" className="sr-only" onChange={(e) => { setFile(e.target.files?.[0] ?? null) }} />
+                        <input type="file" multiple className="sr-only" onChange={handleFiles} />
                       </label>
                       <p className="pl-1">or drag and drop</p>
                     </div>
@@ -126,6 +136,9 @@ export function Room() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div id="files">
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-x-6">
